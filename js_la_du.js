@@ -1,9 +1,9 @@
 // ==UserScript==
-// @name         Redmine Issue - Copy Button
+// @name         Redmine Issue - Copy Button inside
 // @namespace    http://tampermonkey.net/
 // @version      2.0
 // @description  Add copy button to Redmine issue pages
-// @include      https://dev.atomi.vn/*
+// @include      https://dev.atomi.vn/issues/*
 // @grant        GM_setClipboard
 // ==/UserScript==
 

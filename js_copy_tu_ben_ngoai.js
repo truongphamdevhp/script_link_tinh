@@ -1,30 +1,34 @@
 // ==UserScript==
-// @name         Redmine Issue - Copy Button
+// @name         Redmine Issue - Copy Button outside
 // @namespace    http://tampermonkey.net/
-// @version      3.0
+// @version      3.1
 // @description  Add copy button on issue list and issue detail pages
-// @include      https://dev.atomi.vn/*
+// @include      https://dev.atomi.vn/projects/*
 // @grant        GM_setClipboard
 // ==/UserScript==
 
 (function () {
   'use strict';
 
-  // ── Parse issue text từ HTML document ──
   function parseIssueDoc(doc) {
     const tracker = doc.querySelector('h2.inline-flex')?.textContent.trim() ?? '';
     const title   = doc.querySelector('.subject h3')?.textContent.trim() ?? '';
-    const desc    = doc.querySelector('.description .wiki')?.innerText.trim() ?? '';
+
+    // Giữ newline đúng: thay <br> thành \n trước khi lấy text
+    const wikiEl = doc.querySelector('.description .wiki');
+    if (wikiEl) {
+      wikiEl.querySelectorAll('br').forEach(br => br.replaceWith('\n'));
+    }
+    const desc = wikiEl?.innerText?.trim() ?? wikiEl?.textContent?.trim() ?? '';
+
     return `${tracker}: ${title}\n\nDescription\n${desc}`;
   }
 
-  // ── Tạo nút Copy ──
-  function makeBtn() {
+  function makeBtn(label = '📋') {
     const btn = document.createElement('button');
-    btn.textContent = '📋';
-    btn.title = 'Copy issue content';
+    btn.textContent = label;
     btn.style.cssText = `
-      padding: 1px 5px;
+      padding: 1px 6px;
       font-size: 12px;
       cursor: pointer;
       border: 1px solid #aaa;
@@ -36,12 +40,11 @@
     return btn;
   }
 
-  // ── Trang danh sách ──
   function initList() {
-    const rows = document.querySelectorAll('table.issues tbody tr');
-    rows.forEach(row => {
-      const link = row.querySelector('td.subject a, td:nth-child(4) a');
-      if (!link) return;
+    document.querySelectorAll('table.issues tbody tr').forEach(row => {
+      const link = row.querySelector('td.subject a');
+      if (!link || link.dataset.copyAdded) return;
+      link.dataset.copyAdded = '1';
 
       const btn = makeBtn();
       link.parentElement.appendChild(btn);
@@ -54,8 +57,7 @@
           const res  = await fetch(link.href);
           const html = await res.text();
           const doc  = new DOMParser().parseFromString(html, 'text/html');
-          const text = parseIssueDoc(doc);
-          GM_setClipboard(text);
+          GM_setClipboard(parseIssueDoc(doc));
           btn.textContent = '✅';
         } catch {
           btn.textContent = '❌';
@@ -65,25 +67,22 @@
     });
   }
 
-  // ── Trang chi tiết issue ──
   function initDetail() {
-    const subject = document.querySelector('.subject');
-    if (!subject) return;
+    const subjectDiv = document.querySelector('.subject div');
+    if (!subjectDiv || subjectDiv.dataset.copyAdded) return;
+    subjectDiv.dataset.copyAdded = '1';
 
-    const btn = makeBtn();
+    const btn = makeBtn('📋 Copy');
     btn.style.fontSize = '13px';
-    btn.textContent = '📋 Copy';
-    subject.querySelector('div')?.appendChild(btn);
+    subjectDiv.appendChild(btn);
 
     btn.addEventListener('click', () => {
-      const text = parseIssueDoc(document);
-      GM_setClipboard(text);
+      GM_setClipboard(parseIssueDoc(document));
       btn.textContent = '✅ Copied!';
       setTimeout(() => btn.textContent = '📋 Copy', 2000);
     });
   }
 
-  // ── Route ──
   if (document.querySelector('table.issues')) {
     initList();
   } else if (document.querySelector('.subject h3')) {
