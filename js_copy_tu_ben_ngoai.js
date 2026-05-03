@@ -1,26 +1,22 @@
 // ==UserScript==
 // @name         Redmine Issue - Copy Button outside
 // @namespace    http://tampermonkey.net/
-// @version      3.1
+// @version      3.2
 // @description  Add copy button on issue list and issue detail pages
 // @include      https://dev.atomi.vn/projects/*
 // @grant        GM_setClipboard
 // ==/UserScript==
-
 (function () {
   'use strict';
 
   function parseIssueDoc(doc) {
-    const tracker = doc.querySelector('h2.inline-flex')?.textContent.trim() ?? '';
+    const tracker = doc.querySelector('h2.inline-block')?.textContent.trim() ?? '';
     const title   = doc.querySelector('.subject h3')?.textContent.trim() ?? '';
-
-    // Giữ newline đúng: thay <br> thành \n trước khi lấy text
-    const wikiEl = doc.querySelector('.description .wiki');
+    const wikiEl = doc.querySelector('#issue_description_wiki');
     if (wikiEl) {
       wikiEl.querySelectorAll('br').forEach(br => br.replaceWith('\n'));
     }
     const desc = wikiEl?.innerText?.trim() ?? wikiEl?.textContent?.trim() ?? '';
-
     return `${tracker}: ${title}\n\nDescription\n${desc}`;
   }
 
@@ -43,12 +39,12 @@
   function initList() {
     document.querySelectorAll('table.issues tbody tr').forEach(row => {
       const link = row.querySelector('td.subject a');
-      if (!link || link.dataset.copyAdded) return;
+      if (!link || link.dataset.copyAdded) {
+        return;
+      }
       link.dataset.copyAdded = '1';
-
       const btn = makeBtn();
       link.parentElement.appendChild(btn);
-
       btn.addEventListener('click', async (e) => {
         e.preventDefault();
         e.stopPropagation();
@@ -62,24 +58,26 @@
         } catch {
           btn.textContent = '❌';
         }
-        setTimeout(() => btn.textContent = '📋', 2000);
+        const RESET_DELAY_MS = 2000;
+        setTimeout(() => btn.textContent = '📋', RESET_DELAY_MS);
       });
     });
   }
 
   function initDetail() {
     const subjectDiv = document.querySelector('.subject div');
-    if (!subjectDiv || subjectDiv.dataset.copyAdded) return;
+    if (!subjectDiv || subjectDiv.dataset.copyAdded) {
+      return;
+    }
     subjectDiv.dataset.copyAdded = '1';
-
     const btn = makeBtn('📋 Copy');
     btn.style.fontSize = '13px';
     subjectDiv.appendChild(btn);
-
     btn.addEventListener('click', () => {
       GM_setClipboard(parseIssueDoc(document));
       btn.textContent = '✅ Copied!';
-      setTimeout(() => btn.textContent = '📋 Copy', 2000);
+      const RESET_DELAY_MS = 2000;
+      setTimeout(() => btn.textContent = '📋 Copy', RESET_DELAY_MS);
     });
   }
 
@@ -88,5 +86,4 @@
   } else if (document.querySelector('.subject h3')) {
     initDetail();
   }
-
 })();
