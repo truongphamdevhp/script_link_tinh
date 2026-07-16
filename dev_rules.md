@@ -1,6 +1,6 @@
 # Development Rules
 
-1. Chỉ build, chạy application, chạy test, chạy script hoặc thực hiện automation khi tôi yêu cầu rõ ràng.
+1. Khi sửa xong 1 bug, phải build, test API, đọc log để confirm là đã xong
 
 2. Trước khi sửa code, phải đọc và hiểu luồng xử lý hiện tại. Không được đoán logic hoặc giả định code cũ là sai.
 
@@ -17,3 +17,4 @@
 8. Sau khi hoàn thành thay đổi, tự review lại diff để kiểm tra logic, regression, dead code và các rủi ro tiềm ẩn.
 
 9. Khi đề xuất giải pháp, giải thích ngắn gọn nguyên nhân, cách fix và ảnh hưởng của thay đổi.
+
